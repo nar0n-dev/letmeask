@@ -1,13 +1,56 @@
+import { useParams } from 'react-router-dom';
 import { Button } from '../components/Button';
-
+import { RoomCode } from "../components/RoomCode"
+import logoSVG from '../assets/images/logo.svg';
 import '../styles/room.scss'
+import { FormEvent, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { database } from '../services/firebase';
+
+type RoomParams = {
+    id: string
+}
+
 export const Room = () => {
+    const { user } = useAuth();
+
+    const params = useParams<RoomParams>()
+
+    const [newQuestion, setNewQuestion] = useState("")
+
+    const roomId = params.id;
+    
+    const handleSendQuestion = async (event: FormEvent) => {
+        event.preventDefault()
+        if (newQuestion.trim() === '') {
+            return;
+        }
+
+        if (!user) {
+            throw new Error('You must be logged in')
+        }
+
+        const question = {
+            content: newQuestion,
+            author: {
+                name: user.name,
+                avatar: user.avatar
+            },
+            isHighLighted: false,
+            isAnswered: false,
+        }
+
+        await database.ref(`rooms/${roomId}/questions`).push(question)
+
+        setNewQuestion("")
+    }
+
     return (
         <div id="page-room">
             <header>
                 <div className="content">
-                    <img src="{logoImg}" alt="Letmeask" />
-                    <div>code</div>
+                    <img src={logoSVG} alt="Letmeask" />
+                    <RoomCode code={params.id}/>
                 </div>
             </header>
 
@@ -17,14 +60,18 @@ export const Room = () => {
                     <span>4 perguntas</span>
                 </div>
 
-                <form>
+                <form onSubmit={handleSendQuestion}>
                     <textarea 
                         placeholder="What do you want to ask me?"
+                        onChange={event => setNewQuestion(event.target.value)}
+                        value={newQuestion}
                     />
 
                     <div className="form-footer">
-                        <span>To send your question, <button>please do login</button>.</span>
-                        <Button type="submit">Send</Button>
+                        {!user && (
+                            <span>To send your question, <button>please do login</button>.</span>
+                        )}
+                        <Button type="submit" disabled={!user}>Send</Button>
                     </div>
                 </form>
             </main>
