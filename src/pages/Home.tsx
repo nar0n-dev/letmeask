@@ -11,7 +11,7 @@ import { database } from '../services/firebase';
 export const Home = () => {
     const history = useHistory();
 
-    const { signInWithGoogle, user } = useAuth();
+    const { signInWithGoogle, user} = useAuth();
 
     const [roomCode, setRoomCode] = useState('');
 
@@ -35,6 +35,11 @@ export const Home = () => {
         
         if (!roomRef.exists()) {
             alert('Room does not exists!')
+            setRoomCode('')
+            return;
+        }
+        if (roomRef.val().endedAt) {
+            alert('This room is Closed!')
             setRoomCode('')
             return;
         }
